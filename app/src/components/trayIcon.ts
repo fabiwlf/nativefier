@@ -3,6 +3,8 @@ import log from 'loglevel';
 
 import { getAppIcon, getCounterValue, isOSX } from '../helpers/helpers';
 
+import { initMenubarApp } from './menubarApplication';
+
 export function createTrayIcon(
   nativefierOptions,
   mainWindow: BrowserWindow,
@@ -13,6 +15,7 @@ export function createTrayIcon(
     const iconPath = getAppIcon();
     const nimage = nativeImage.createFromPath(iconPath);
     const appIcon = new Tray(nativeImage.createEmpty());
+    var showFunction = mainWindow.show;
 
     if (isOSX()) {
       //sets the icon to the height of the tray.
@@ -28,8 +31,12 @@ export function createTrayIcon(
       if (mainWindow.isVisible()) {
         mainWindow.hide();
       } else {
-        mainWindow.show();
+        //mainWindow.show();
+        showFunction();
+        // showWindow();
+        //appIcon.focus();
       }
+      //app.dock.hide();
     };
 
     const contextMenu = Menu.buildFromTemplate([
@@ -44,6 +51,7 @@ export function createTrayIcon(
     ]);
 
     appIcon.on('click', onClick);
+    //appIcon.on('double-click', onClick)
 
     if (options.counter) {
       mainWindow.on('page-title-updated', (event, title) => {
@@ -71,7 +79,13 @@ export function createTrayIcon(
     }
 
     appIcon.setToolTip(options.name);
-    appIcon.setContextMenu(contextMenu);
+    if (!isOSX()) appIcon.setContextMenu(contextMenu);
+    const rightClickMenu = () => {
+      appIcon.popUpContextMenu(contextMenu);
+    };
+    appIcon.on('right-click', rightClickMenu);
+
+    showFunction = initMenubarApp(nativefierOptions, mainWindow, appIcon);
 
     return appIcon;
   }
